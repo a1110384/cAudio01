@@ -8,8 +8,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <stdbool.h>
-
-#include "resource.h"
+#include <time.h>
 
 #define SAMPLE_RATE 44100
 #define BPM 140
@@ -18,19 +17,19 @@
 #define CHUNK_AMT 2
 const static int halfChunk = CHUNK_SIZE / 2;
 const static int CPS = (SAMPLE_RATE / CHUNK_SIZE);
-float cpsInv;
+static float cpsInv;
 
-#define res 16
+#define res 8
 #define resF (float)res
 #define midiTotal 114
 const static short oscAmount = res * midiTotal;
 #define OAMacro res * midiTotal
-double oscMult;
-short oscs2;
-float oscInv;
+static double oscMult;
+static short oscs2;
+static float oscInv;
 
 #define activeOscs 32
-float activeMult;
+static float activeMult;
 
 static int cStep = 0;
 static int gStep = 0;
@@ -45,8 +44,8 @@ const static float nSpeeds[] = { 4.0f, 3.0f, 2.1f, 1.5f, 1.0f, 0.50f, 0.30f, 0.1
 const static float byteMult = 1.0f / 256.0f;
 const static float noiseMult = 1.0f / 7.0f;
 
-unsigned char buffer[bufferLength][OAMacro][2];
-unsigned char nBuffer[bufferLength][noisesAmt][2];
+static unsigned char buffer[bufferLength][OAMacro][2];
+static unsigned char nBuffer[bufferLength][noisesAmt][2];
 
 const static float kbSize = bufferLength * OAMacro * 2 / 1000.0f;
 const static float mbSize = bufferLength * OAMacro * 2 / 1000000.0f;
@@ -77,10 +76,9 @@ int clamp(int v, int lo, int hi);
 float mtf(float m);
 float ftm(float f);
 float harmonic(float n, int har);
-int k2m(float note7, int* key);
+int k2m(float note7, int key[]);
 
 int rani(int min, int max);
-int raniOf(int arr[]);
 float ranf();
 float ranfIn(float min, float max);
 
