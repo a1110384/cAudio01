@@ -35,6 +35,9 @@ float activeMult;
 static int cStep = 0;
 static int gStep = 0;
 
+#define sineLength 1024
+short sineWave[sineLength];
+
 #define bufferLength 512
 #define noisesAmt 10
 #define noiseLength 8192
@@ -62,7 +65,7 @@ void writeLoop(HWAVEOUT waveOut);
 
 //Composer.c
 void generate();
-void setFV(int offStep, int freq, float val);
+void setFV(int offStep, int freq, float val, int channel);
 void nSetFV(int offStep, int freq, float val);
 float* getVols();
 float* getNoises();

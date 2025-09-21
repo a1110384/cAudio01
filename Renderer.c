@@ -8,9 +8,7 @@ WAVEHDR header[CHUNK_AMT] = { 0 };
 int16_t chunks[CHUNK_AMT][CHUNK_SIZE];
 short chunkIndex = 0;
 
-#define sineLength 1024
-short sineWave[sineLength];
-double lengthMult;
+
 long totalOffset = 0;
 
 #define blendAmount 0.9f
@@ -45,7 +43,7 @@ void startRenderer(HWAVEOUT waveOut) {
 
 	activeMult = sqrtf(1.0f / activeOscs);
 
-	lengthMult = sineLength / (double)SAMPLE_RATE;
+	double lengthMult = sineLength / (double)SAMPLE_RATE;
 	timeMult = (1.0f / (halfChunk * blendAmount));
 
 	for (int i = 0; i < sineLength; i++) {
@@ -91,35 +89,33 @@ void renderSamples(float inVol) {
 
 		//Sine rendering
 		for (int osc = 0; osc < oscAmount; osc++) {
-			if (cVols[osc * 2] > 0.0f || cVols[osc * 2 + 1] > 0.0f || cVols[osc * 2 + oscs2] > 0.0f || cVols[osc * 2 + 1 + oscs2] > 0.0f) {
+			if (cVols[osc * 2] == 0.0f && cVols[osc * 2 + 1] == 0.0f && cVols[osc * 2 + oscs2] == 0.0f && cVols[osc * 2 + 1 + oscs2] == 0.0f) { continue; }
 
-				int index = (int)((totalOffset + i) * mtfs[osc] + sineStarts[osc]) % sineLength;
+			int index = (int)((totalOffset + i) * mtfs[osc] + sineStarts[osc]) % sineLength;
 
-				float realVolL = lerp(cVols[osc * 2 + oscs2], cVols[osc * 2], time);
-				float realVolR = lerp(cVols[osc * 2 + 1 + oscs2], cVols[osc * 2 + 1], time);
+			float realVolL = lerp(cVols[osc * 2 + oscs2], cVols[osc * 2], time);
+			float realVolR = lerp(cVols[osc * 2 + 1 + oscs2], cVols[osc * 2 + 1], time);
 
-				chunks[chunkIndex][i * 2] += sineWave[index] * realVolL * inVol; //LEFT
-				chunks[chunkIndex][i * 2 + 1] += sineWave[index] * realVolR * inVol; //RIGHT
-			}
+			chunks[chunkIndex][i * 2] += sineWave[index] * realVolL * inVol; //LEFT
+			chunks[chunkIndex][i * 2 + 1] += sineWave[index] * realVolR * inVol; //RIGHT
 		}
 
 		//Noise rendering
 		for (int n = 0; n < noisesAmt; n++) {
-			if (cNoises[n * 2] > 0.0f || cNoises[n * 2 + 1] > 0.0f || cNoises[n * 2 + 20] > 0.0f || cNoises[n * 2 + 1 + 20] > 0.0f) {
+			if (cNoises[n * 2] == 0.0f && cNoises[n * 2 + 1] == 0.0f && cNoises[n * 2 + 20] == 0.0f && cNoises[n * 2 + 1 + 20] == 0.0f) { continue; }
 
-				//RESAMPLER/LERPER
-				float position = (totalOffset + i) * nSpeeds[n];
-				float intDepth = position - (int)position;
-				int index1 = (int)position % noiseLength;
-				int index2 = ((int)position + 1) % noiseLength;
-				float nValue = lerp(noiseWave[index1], noiseWave[index2], intDepth);
+			//RESAMPLER/LERPER
+			float position = (totalOffset + i) * nSpeeds[n];
+			float intDepth = position - (int)position;
+			int index1 = (int)position % noiseLength;
+			int index2 = ((int)position + 1) % noiseLength;
+			float nValue = lerp(noiseWave[index1], noiseWave[index2], intDepth);
 
-				float volL = lerp(cNoises[n * 2 + 20], cNoises[n * 2], time);
-				float volR = lerp(cNoises[n * 2 + 1 + 20], cNoises[n * 2 + 1], time);
+			float volL = lerp(cNoises[n * 2 + 20], cNoises[n * 2], time);
+			float volR = lerp(cNoises[n * 2 + 1 + 20], cNoises[n * 2 + 1], time);
 
-				chunks[chunkIndex][i * 2] += nValue * volL * inVol; //LEFT
-				chunks[chunkIndex][i * 2 + 1] += nValue * volR * inVol; //RIGHT
-			}
+			chunks[chunkIndex][i * 2] += nValue * volL * inVol; //LEFT
+			chunks[chunkIndex][i * 2 + 1] += nValue * volR * inVol; //RIGHT
 		}
 
 		//Clamp values
