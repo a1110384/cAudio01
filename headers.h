@@ -9,6 +9,8 @@
 #include <math.h>
 #include <stdbool.h>
 
+#include "resource.h"
+
 #define SAMPLE_RATE 44100
 #define BPM 140
 #define SPM (SAMPLE_RATE * 60)
@@ -35,6 +37,8 @@ static int gStep = 0;
 
 #define bufferLength 512
 #define noisesAmt 10
+#define noiseLength 8000
+const static float nSpeeds[] = { 4.0f, 3.0f, 2.1f, 1.5f, 1.0f, 0.64f, 0.46f, 0.28f, 0.17f, 0.05f };
 const static float byteMult = 1.0f / 256.0f;
 
 unsigned char buffer[bufferLength][OAMacro][2];
@@ -47,6 +51,8 @@ const static char* kbString = "KB"; const static char* mbString = "MB";
 static float mVol = 0.2f;
 static short playing = 1;
 
+static int wavSize;
+
 //Renderer.c
 WAVEFORMATEX setFormat();
 void startRenderer(HWAVEOUT waveOut);
@@ -56,7 +62,9 @@ void writeLoop(HWAVEOUT waveOut);
 //Composer.c
 void generate();
 void setFV(int offStep, int freq, float val);
+void nSetFV(int offStep, int freq, float val);
 float* getVols();
+float* getNoises();
 
 //UT.c
 float clampf(float v, float lo, float hi);
@@ -67,8 +75,8 @@ float ftm(float f);
 float harmonic(float n, int har);
 int k2m(float note7, int* key);
 
-int rani(int max);
 int rani(int min, int max);
+int raniOf(int arr[]);
 float ranf();
 float ranfIn(float min, float max);
 
@@ -84,3 +92,4 @@ void writes(const char* text, const char* add, int x, int y);
 void printVolume(float v);
 void setBox(int x, int y, int width, int height);
 void debugC(int gst);
+void debugR(int wavSize);

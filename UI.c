@@ -104,4 +104,9 @@ void debugC(int gst) {
 	setCursor(1, 6); printf("Playback rate: %.1fms, %d steps/second    ", 1000 * cpsInv, CPS);
 	setCursor(1, 7); printf("Oscillators: %d", oscAmount);
 	setCursor(1, 9); printf("time: %d", time(NULL));
+	
+}
+
+void debugR(int wavSize) {
+	setCursor(1, 11); printf("time: %d", wavSize);
 }

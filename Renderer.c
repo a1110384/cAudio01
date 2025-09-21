@@ -18,8 +18,10 @@ float timeMult;
 
 double mtfs[midiTotal * res];
 short sineStarts[midiTotal * res];
+short noiseWave[noiseLength];
 
 float* cVols;
+float* cNoises;
 
 
 WAVEFORMATEX setFormat() {
@@ -54,6 +56,14 @@ void startRenderer(HWAVEOUT waveOut) {
 		mtfs[osc] = mtf((osc / resF) + 16) * lengthMult;
 		sineStarts[osc] = rand() % 44100;
 	}
+	
+	for (int i = 0; i < noiseLength; i++) {
+		//noiseWave[i] = (short)(((uint8_t)noiseChars[i * 2] << 8) | (uint8_t)noiseChars[i * 2 + 1]);
+		noiseWave[i] = rani(SHORT_MIN, SHORT_MAX);
+	}
+	
+
+
 
 	waveOutSetVolume(waveOut, 0xFFFFFFFF);
 	for (int i = 0; i < CHUNK_AMT; ++i) {
@@ -70,6 +80,7 @@ void startRenderer(HWAVEOUT waveOut) {
 void renderSamples(float inVol) {
 
 	generate();
+	cNoises = getNoises(); //Get noises first (cStep advances in getVols)
 	cVols = getVols();
 
 	for (int i = 0; i < halfChunk; ++i) {
@@ -79,18 +90,35 @@ void renderSamples(float inVol) {
 
 		float time = i * timeMult;
 
+		//Sine rendering
 		for (int osc = 0; osc < oscAmount; osc++) {
-			if (cVols[osc * 2] != 0.0f || cVols[osc * 2 + 1] != 0.0f || cVols[osc * 2 + oscs2] != 0.0f || cVols[osc * 2 + 1 + oscs2] != 0.0f) {
+			if (cVols[osc * 2] > 0.0f || cVols[osc * 2 + 1] > 0.0f || cVols[osc * 2 + oscs2] > 0.0f || cVols[osc * 2 + 1 + oscs2] > 0.0f) {
 
-				int sIndex = (int)((totalOffset + i) * mtfs[osc] + sineStarts[osc]) % sineLength;
+				int index = (int)((totalOffset + i) * mtfs[osc] + sineStarts[osc]) % sineLength;
 
 				float realVolL = lerp(cVols[osc * 2 + oscs2], cVols[osc * 2], time);
 				float realVolR = lerp(cVols[osc * 2 + 1 + oscs2], cVols[osc * 2 + 1], time);
 
-				chunks[chunkIndex][i * 2] += sineWave[sIndex] * realVolL * inVol; //LEFT
-				chunks[chunkIndex][i * 2 + 1] += sineWave[sIndex] * realVolR * inVol; //RIGHT
+				chunks[chunkIndex][i * 2] += sineWave[index] * realVolL * inVol; //LEFT
+				chunks[chunkIndex][i * 2 + 1] += sineWave[index] * realVolR * inVol; //RIGHT
 			}
 		}
+
+		//Noise rendering
+		for (int n = 0; n < noisesAmt; n++) {
+			if (cNoises[n * 2] > 0.0f || cNoises[n * 2 + 1] > 0.0f || cNoises[n * 2 + 20] > 0.0f || cNoises[n * 2 + 1 + 20] > 0.0f) {
+
+				//ADD LERPING for proper resampling
+				int index = (int)((totalOffset + i) * nSpeeds[n]) % noiseLength;
+
+				float volL = lerp(cNoises[n * 2], cNoises[n * 2], time);
+				float volR = lerp(cNoises[n * 2 + 1], cNoises[n * 2 + 1], time);
+
+				chunks[chunkIndex][i * 2] += noiseWave[index] * volL * inVol; //LEFT
+				chunks[chunkIndex][i * 2 + 1] += noiseWave[index] * volR * inVol; //RIGHT
+			}
+		}
+
 		//Clamp values
 		chunks[chunkIndex][i * 2] = clamp(chunks[chunkIndex][i * 2], SHORT_MIN, SHORT_MAX);
 		chunks[chunkIndex][i * 2 + 1] = clamp(chunks[chunkIndex][i * 2 + 1], SHORT_MIN, SHORT_MAX);

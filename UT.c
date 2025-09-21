@@ -23,6 +23,9 @@ int k2m(float note7, int* key) {
 int rani(int min, int max) { return (rand() % (max - min)) + min; }
 float ranf() { return rand() / (float)RAND_MAX; }
 float ranfIn(float min, float max) { return rand() / (float)RAND_MAX * (max - min) + min; }
+int raniOf(int arr[]) {
+	return arr[rani(0, sizeof(arr) / 4)];
+}
 
 float lerp(float a, float b, float t) { return a + t * (b - a); }
 float envADSR(float t, float l, float a, float d, float s, float r, float c) {
@@ -32,3 +35,4 @@ float envADSR(float t, float l, float a, float d, float s, float r, float c) {
 	if (t > l + r || t < 0.0f) { return 0.0f; } //Before/After
 	return s; //Sustain
 }
+
