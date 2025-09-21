@@ -58,7 +58,6 @@ void startRenderer(HWAVEOUT waveOut) {
 	}
 	
 	for (int i = 0; i < noiseLength; i++) {
-		//noiseWave[i] = (short)(((uint8_t)noiseChars[i * 2] << 8) | (uint8_t)noiseChars[i * 2 + 1]);
 		noiseWave[i] = rani(SHORT_MIN, SHORT_MAX);
 	}
 	
@@ -108,14 +107,18 @@ void renderSamples(float inVol) {
 		for (int n = 0; n < noisesAmt; n++) {
 			if (cNoises[n * 2] > 0.0f || cNoises[n * 2 + 1] > 0.0f || cNoises[n * 2 + 20] > 0.0f || cNoises[n * 2 + 1 + 20] > 0.0f) {
 
-				//ADD LERPING for proper resampling
-				int index = (int)((totalOffset + i) * nSpeeds[n]) % noiseLength;
+				//RESAMPLER/LERPER
+				float position = (totalOffset + i) * nSpeeds[n];
+				float intDepth = position - (int)position;
+				int index1 = (int)position % noiseLength;
+				int index2 = ((int)position + 1) % noiseLength;
+				float nValue = lerp(noiseWave[index1], noiseWave[index2], intDepth);
 
-				float volL = lerp(cNoises[n * 2], cNoises[n * 2], time);
-				float volR = lerp(cNoises[n * 2 + 1], cNoises[n * 2 + 1], time);
+				float volL = lerp(cNoises[n * 2 + 20], cNoises[n * 2], time);
+				float volR = lerp(cNoises[n * 2 + 1 + 20], cNoises[n * 2 + 1], time);
 
-				chunks[chunkIndex][i * 2] += noiseWave[index] * volL * inVol; //LEFT
-				chunks[chunkIndex][i * 2 + 1] += noiseWave[index] * volR * inVol; //RIGHT
+				chunks[chunkIndex][i * 2] += nValue * volL * inVol; //LEFT
+				chunks[chunkIndex][i * 2 + 1] += nValue * volR * inVol; //RIGHT
 			}
 		}
 

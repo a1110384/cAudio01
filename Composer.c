@@ -72,8 +72,11 @@ void generate() {
 					}
 					else { break; }
 				}
-				//setFV(i, freq * res, v);
-				nSetFV(i, 0, v);
+				setFV(i, freq * res, v);
+				for (int n = 0; n < noisesAmt; n++) {
+					nSetFV(i, n, v);
+				}
+				
 
 				//while loops to do harmonics  
 				//while cFreq < oscAmount, keep adding harmonics etc
@@ -140,18 +143,18 @@ float* getNoises() {
 		//Current step
 		float l = nBuffer[cStep][i][0] * byteMult;
 		float r = nBuffer[cStep][i][1] * byteMult;
-		noises[i * 2] = l * l * activeMult;
-		noises[i * 2 + 1] = r * r * activeMult;
+		noises[i * 2] = l * l * noiseMult;
+		noises[i * 2 + 1] = r * r * noiseMult;
 
 		//Previous step
 		l = nBuffer[prev][i][0] * byteMult;
 		r = nBuffer[prev][i][1] * byteMult;
-		noises[i * 2 + 20] = l * l;
-		noises[i * 2 + 1 + 20] = r * r;
+		noises[i * 2 + 20] = l * l * noiseMult;
+		noises[i * 2 + 1 + 20] = r * r * noiseMult;
 
 		//Clear previous step
 		nBuffer[prev][i][0] = 0;
-		nBuffer[prev][i][0] = 1;
+		nBuffer[prev][i][1] = 0;
 	}
 	return noises;
 }

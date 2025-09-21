@@ -37,9 +37,10 @@ static int gStep = 0;
 
 #define bufferLength 512
 #define noisesAmt 10
-#define noiseLength 8000
-const static float nSpeeds[] = { 4.0f, 3.0f, 2.1f, 1.5f, 1.0f, 0.64f, 0.46f, 0.28f, 0.17f, 0.05f };
+#define noiseLength 8192
+const static float nSpeeds[] = { 4.0f, 3.0f, 2.1f, 1.5f, 1.0f, 0.50f, 0.30f, 0.15f, 0.08f, 0.02f };
 const static float byteMult = 1.0f / 256.0f;
+const static float noiseMult = 1.0f / 7.0f;
 
 unsigned char buffer[bufferLength][OAMacro][2];
 unsigned char nBuffer[bufferLength][noisesAmt][2];
