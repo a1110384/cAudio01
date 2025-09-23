@@ -11,13 +11,13 @@ int clamp(int v, int lo, int hi) {
 	return v;
 }
 
-float mtf(float m) { return 440 * powf(2, (m - 69) / 12.0f); }
+float mtf(float m) { return 440 * powf(2.0f, (m - 69) / 12.0f); }
 float ftm(float f) { return 12 * (logf(f / 220) / logf(2.0f)) + 57; }
 float harmonic(float n, int har) { return ftm(mtf(n) * (har + 1)); }
 int k2m(float note7, int key[]) {
 	float oct = note7 / 7.0f;
 	int note = (int)note7 - ((int)oct * 7.0f);
-	return std::min(((int)oct * 12 + key[note]), oscAmount - 1);
+	return min(((int)oct * 12 + key[note]), oscAmount - 1);
 }
 
 int rani(int min, int max) { return (rand() % (max - min)) + min; }
@@ -32,4 +32,6 @@ float envADSR(float t, float l, float a, float d, float s, float r, float c) {
 	if (t > l + r || t < 0.0f) { return 0.0f; } //Before/After
 	return s; //Sustain
 }
+
+float osc(float t, float amt) { return 1.0f - (sineWave[(int)(t * sineLength) % sineLength] / (float)SHORT_MAX + 1.0f) * 0.5f * amt; }
 

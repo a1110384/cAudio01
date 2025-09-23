@@ -10,6 +10,9 @@
 #include <stdbool.h>
 #include <time.h>
 
+#define SHORT_MIN -32768
+#define SHORT_MAX 32767
+
 #define SAMPLE_RATE 44100
 #define BPM 140
 #define SPM (SAMPLE_RATE * 60)
@@ -17,7 +20,7 @@
 #define CHUNK_AMT 2
 const static int halfChunk = CHUNK_SIZE / 2;
 const static int CPS = (SAMPLE_RATE / CHUNK_SIZE);
-static float cpsInv;
+float cpsInv;
 
 #define res 8
 #define resF (float)res
@@ -29,7 +32,6 @@ static short oscs2;
 static float oscInv;
 
 #define activeOscs 32
-static float activeMult;
 
 static int cStep = 0;
 static int gStep = 0;
@@ -43,6 +45,7 @@ short sineWave[sineLength];
 const static float nSpeeds[] = { 4.0f, 3.0f, 2.1f, 1.5f, 1.0f, 0.50f, 0.30f, 0.15f, 0.08f, 0.02f };
 const static float byteMult = 1.0f / 256.0f;
 const static float noiseMult = 1.0f / 7.0f;
+const static float activeMult = 1.0f / 3.0f;
 
 static unsigned char buffer[bufferLength][OAMacro][2];
 static unsigned char nBuffer[bufferLength][noisesAmt][2];
@@ -55,6 +58,11 @@ static float mVol = 0.2f;
 static short playing = 1;
 
 static int wavSize;
+
+
+
+
+
 
 //Renderer.c
 WAVEFORMATEX setFormat();
@@ -84,6 +92,7 @@ float ranfIn(float min, float max);
 
 float lerp(float a, float b, float t);
 float envADSR(float t, float l, float a, float d, float s, float r, float c);
+float osc(float t, float amt);
 
 //UI.c
 void initUI();

@@ -95,14 +95,14 @@ void setBox(int x, int y, int width, int height) {
 }
 
 void debugC(int gst) {
-
+	
 	float bSize = kbSize; const char* bType = kbString;
 	if (kbSize > 1000.0f) { bSize = mbSize; bType = mbString; }
 
 	setCursor(1, 4); printf("Current Step: %d          ", gst);
 	setCursor(1, 5); printf("Buffer size: %d steps, %.1f secs (%.1f%s) ", bufferLength, bufferLength * cpsInv, bSize, bType);
-	setCursor(1, 6); printf("Playback rate: %.1fms, %d steps/second    ", 1000 * cpsInv, CPS);
-	setCursor(1, 7); printf("Oscillators: %d", oscAmount);
+	setCursor(1, 6); printf("Playback rate: %.1fms, %d steps/second    ", 1000.0f * cpsInv, CPS);
+	setCursor(1, 7); printf("Oscillators: %d (Res: %d)", oscAmount, res);
 	setCursor(1, 9); printf("time: %d", time(NULL));
 	
 }

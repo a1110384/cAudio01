@@ -5,102 +5,166 @@ const int rhy1[] = { 1, 0, 0, 1, 0, 0, 1, 0 };
 
 int cRhy = 0;
 
-void generate() {
+static void synthesize(float l,
+	float ap,
+	float dp,
+	float s,
+	float r,
+	float c,
+	int freq,
+	float gain,
 
-	for (int note = 0; note < 1; note++) {
-		bool nTrigger = false;
-		if (cStep % 16 == 0) cRhy++;
-		if (rhy1[cRhy % 8] && cStep % 16 == 0) { nTrigger = true; }
+	float loMin,
+	float hiMin,
+	int center,
+	char fKeyTrack,
+	int distance,
+	float fc,
+
+	float falloffTime,
+	float falloffCurve,
+	float sharpness,
+	
+	float vOscRate,
+	float vOscAmt,
+
+	int harDist
+
+	) {
+
+
+	float a = l * ap;
+	float d = l * dp;
+	int stepLength = (int)((l + r) * CPS);
+
+	static float filter[OAMacro];
+	int rCenter = center * res;
+	if (fKeyTrack == 1) { rCenter = freq * res; }
+	int rDistance = distance * res;
+	float distInv = 1.0f / rDistance;
+
+	float rFalloffTime = 1.0f / falloffTime;
+
+	static float harValues[OAMacro][2];
+
+	
+
+	for (int f = 0; f < oscAmount; f++) {
+		//Low pass
+		if (f >= rCenter && f < rCenter + rDistance) {
+			filter[f] = lerp(powf(1.0f - ((f - rCenter) * distInv), fc), 1.0f, hiMin);
+		}
+		//High pass
+		if (f < rCenter && f > rCenter - rDistance) {
+			filter[f] = lerp(powf((f - (rCenter - rDistance)) * distInv, fc), 1.0f, loMin);
+		}
+		//Outside of ranges
+		if (f >= rCenter + rDistance) { filter[f] = hiMin; }
+		if (f <= rCenter - rDistance) { filter[f] = loMin; }
+
+		harValues[f][0] = ranf();
+		harValues[f][1] = ranf();
+	}
+	
+	//Rendering pass
+	for (int i = 0; i < stepLength; i++) {
+		float time = i * cpsInv;
+		float v = envADSR(time, l, a, d, s, r, c) * gain;
+
+		float falloff = powf(time * rFalloffTime, falloffCurve);
+		int pitchOsc = 0;
+
+		//Harmonics
+		for (int h = 0; h < 100; h++) {
+
+			int index = harmonic(freq, h * harDist) * res;
+
+			float height = 1.0f - index * oscInv;
+
+			float sharpVal = lerp(filter[index], powf(height, falloff), sharpness);
+			float realFilter = lerp(sharpVal, filter[index], falloff);
+
+			//If the harmonic is out of bounds, stop making harmonics
+			if (index >= oscAmount) { break; }
+
+			setFV(i, index, v * realFilter * osc(time * vOscRate, vOscAmt) * harValues[index][0], 0);
+			setFV(i, index, v * realFilter * osc(time * vOscRate, vOscAmt) * harValues[index][1], 1);
+
+			setFV(i, index - 12 * res, v * realFilter * osc(time * vOscRate, vOscAmt) * harValues[index][0], 0);
+			setFV(i, index - 12 * res, v * realFilter * osc(time * vOscRate, vOscAmt) * harValues[index][1], 1);
+		}
+		//setFV(i, freq * res, v, 2);
+
+		//while loops to do harmonics  
+		//while cFreq < oscAmount, keep adding harmonics etc
+	}
+}
+
+
+void generate() {
+	
+	bool nTrigger = false;
+	if (cStep % 16 == 0) cRhy++;
+	//if (rhy1[cRhy % 8] && cStep % 16 == 0) { nTrigger = true; }
+
+	if (ranf() < 0.015f) { nTrigger = true; }
+
+	for (int note = 0; note < rani(1, 6); note++) {
+		
 
 		//If note isnt triggered, goto next note
 		if (!nTrigger) { continue; }
 		//else...
 
-		float l = 3.5f;
-		float a = l * 0.5f;
-		float d = l * 0.5f;
-		float s = 1.0f;
-		float r = 1.0f;
-		float c = 1.0f;
-		int freq = k2m(rani(15, 25), cKey);
-		int stepLength = (int)((l + r) * CPS);
-		float gain = 0.9f;
 
-		static float filter[OAMacro];
-		float loMin = 1.0f;
-		float hiMin = 0.0f;
-		int center = freq * res;
-		int distance = 50 * res;
-		float distInv = 1.0f / distance;
-		float fc = 2.0f;
+		synthesize(ranfIn(3.0f, 7.0f), //Length
+			ranfIn(0.0f, 0.5f), //Attack percent
+			0.5f, //Decay percent
+			0.8f, //Sustain
+			ranfIn(4.0f, 9.0f), //Release
+			0.9f, //Curve
+			k2m(rani(22, 36) + note * 2, cKey), //Freq
+			0.9f, //Gain
 
-		float falloffTime = 1.0f / 4.0f;
-		float falloffCurve = 0.9f;
-		float sharpness = 0.4f;
+			1.0f, //loMin
+			0.0f, //hiMin
+			30, //Filter center
+			1, //Filter key tracking
+			50, //Filter distance
+			1.0f, //Filter curve
 
-		static float harValues[OAMacro];
+			4.0f, //Filter Falloff time
+			0.9f, //Falloff curve
+			ranfIn(0.0f, 0.5f), //Sharpness
 
-		for (int f = 0; f < oscAmount; f++) {
-			//Low pass
-			if (f >= center && f < center + distance) {
-				filter[f] = lerp(powf(1.0f - ((f - center) * distInv), fc), 1.0f, hiMin);
-			}
-			//High pass
-			if (f < center && f > center - distance) {
-				filter[f] = lerp(powf((f - (center - distance)) * distInv, fc), 1.0f, loMin);
-			}
-			//Outside of ranges
-			if (f >= center + distance) { filter[f] = hiMin; }
-			if (f <= center - distance) { filter[f] = loMin; }
+			rani(1, 5), //vOscRate
+			ranfIn(0.0f, 0.4f), //vOscAmt
 
-			harValues[f] = ranf();
-		}
+			rani(1, 6) //harDist
+		);
+		
 
-		for (int i = 0; i < stepLength; i++) {
-			float time = i * cpsInv;
-			float v = envADSR(time, l, a, d, s, r, c) * gain;
-
-			float falloff = powf(time * falloffTime, falloffCurve);
-
-			int pitchOsc = (int)(sineWave[i * 1000] / 32000.0f * 4.0f);
-
-			//Harmonics
-			for (int h = 0; h < 100; h++) {
-
-				int index = harmonic(freq, h * 1) * res;
-
-				float height = 1.0f - index * oscInv;
-
-				float sharpVal = lerp(filter[index], powf(height, falloff), sharpness);
-				float realFilter = lerp(sharpVal, filter[index], falloff);
-
-				//If the harmonic is out of bounds, stop making harmonics
-				if (index >= oscAmount) { break; }
-
-				setFV(i, index + pitchOsc, v * realFilter * harValues[index], 2);
-				setFV(i, index - 12 * res + pitchOsc, v * realFilter * harValues[index - 12 * res], 2);
-			}
-			//
-			//nSetFV(i, 5, v);
-
-			//while loops to do harmonics  
-			//while cFreq < oscAmount, keep adding harmonics etc
-		}
+		//setFV(0, 40 * res, 0.9f, 2);b 
+		//nSetFV(0, 4, 0.5f);
 	}
+	
 
 }
+
+
 
 void setFV(int offStep, int freq, float val, int channel) {
-	if (freq < oscAmount && freq > 0) {
-		int pos = (cStep + offStep) % bufferLength;
-		char v = (char)(clampf(val, 0.0f, 1.0f) * 255);
-		if (channel == 2) {
-			buffer[pos][freq][0] += v; buffer[pos][freq][1] += v;
-		}
-		else { buffer[pos][freq][channel] += v; }
-	}
+	if (freq >= oscAmount || freq < 0) { return; }
+	
+	int pos = (cStep + offStep) % bufferLength;
+	char v = (char)(clampf(val, 0.0f, 1.0f) * 255);
+
+	if (channel == 2) { buffer[pos][freq][0] += v; buffer[pos][freq][1] += v; }
+	else { buffer[pos][freq][channel] += v; }
 }
 void nSetFV(int offStep, int freq, float val) {
+	if (freq >= noisesAmt || freq < 0) { return; }
+
 	int npos = (cStep + offStep) % bufferLength;
 	char nv = (char)(clampf(val, 0.0f, 1.0f) * 255);
 	nBuffer[npos][freq][0] += nv;
@@ -108,7 +172,7 @@ void nSetFV(int offStep, int freq, float val) {
 }
 
 float* getVols() {
-	static float vols[midiTotal * res * 4]; //Current and previous vols
+	static float vols[OAMacro * 4]; //Current and previous vols
 
 	int prev = cStep - 1;
 	if (prev < 0) { prev = bufferLength - 1; }
@@ -124,14 +188,14 @@ float* getVols() {
 		//Previous step
 		l = buffer[prev][osc][0] * byteMult;
 		r = buffer[prev][osc][1] * byteMult;
-		vols[osc * 2 + oscs2] = l * l * activeMult;
-		vols[osc * 2 + 1 + oscs2] = r * r * activeMult;
+		vols[osc * 2 + OAMacro * 2] = l * l * activeMult;
+		vols[osc * 2 + 1 + OAMacro * 2] = r * r * activeMult;
 
 		//Clear previous step
 		buffer[prev][osc][0] = 0;
 		buffer[prev][osc][1] = 0;
 	}
-
+	
 	debugC(gStep);
 
 	//Advance step only after the vols have all been transmitted

@@ -1,8 +1,7 @@
 #include "headers.h"
 
 #define TWOPI 6.283185
-#define SHORT_MIN -32768
-#define SHORT_MAX 32767
+
 
 WAVEHDR header[CHUNK_AMT] = { 0 };
 int16_t chunks[CHUNK_AMT][CHUNK_SIZE];
@@ -36,12 +35,10 @@ WAVEFORMATEX setFormat() {
 
 void startRenderer(HWAVEOUT waveOut) {
 
-	cpsInv = 1.0f / CPS;
+	cpsInv = 1.0f / (float)CPS;
 	oscMult = sqrt(1.0 / oscAmount);
 	oscs2 = oscAmount * 2;
 	oscInv = 1.0f / oscAmount;
-
-	activeMult = sqrtf(1.0f / activeOscs);
 
 	double lengthMult = sineLength / (double)SAMPLE_RATE;
 	timeMult = (1.0f / (halfChunk * blendAmount));
@@ -51,9 +48,10 @@ void startRenderer(HWAVEOUT waveOut) {
 	}
 
 	for (int osc = 0; osc < oscAmount; osc++) {
-		mtfs[osc] = mtf((osc / resF) + 16) * lengthMult;
+		mtfs[osc] = mtf((osc / (float)res) + 16) * lengthMult;
 		sineStarts[osc] = rand() % 44100;
 	}
+	
 	
 	for (int i = 0; i < noiseLength; i++) {
 		noiseWave[i] = rani(SHORT_MIN, SHORT_MAX);
@@ -77,8 +75,10 @@ void startRenderer(HWAVEOUT waveOut) {
 void renderSamples(float inVol) {
 
 	generate();
-	cNoises = getNoises(); //Get noises first (cStep advances in getVols)
+	cNoises = getNoises();
 	cVols = getVols();
+	setCursor(1, 14); printf("is it workin %f", cVols[100 * res * 2 + oscs2]);
+	
 
 	for (int i = 0; i < halfChunk; ++i) {
 		//Clear previous data on this sample
