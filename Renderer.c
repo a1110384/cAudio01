@@ -77,7 +77,6 @@ void renderSamples(float inVol) {
 	generate();
 	cNoises = getNoises();
 	cVols = getVols();
-	setCursor(1, 14); printf("is it workin %f", cVols[100 * res * 2 + oscs2]);
 	
 
 	for (int i = 0; i < halfChunk; ++i) {
@@ -110,6 +109,8 @@ void renderSamples(float inVol) {
 			int index1 = (int)position % noiseLength;
 			int index2 = ((int)position + 1) % noiseLength;
 			float nValue = lerp(noiseWave[index1], noiseWave[index2], intDepth);
+
+			//NOTE: MAKE THIS EITHER HERMITE OR CUBIC INTERPOLATION
 
 			float volL = lerp(cNoises[n * 2 + 20], cNoises[n * 2], time);
 			float volR = lerp(cNoises[n * 2 + 1 + 20], cNoises[n * 2 + 1], time);

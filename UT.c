@@ -32,6 +32,11 @@ float envADSR(float t, float l, float a, float d, float s, float r, float c) {
 	if (t > l + r || t < 0.0f) { return 0.0f; } //Before/After
 	return s; //Sustain
 }
+float envEq(float t, float center, float distance) {
+	if (t < center - distance || t > center + distance) { return 0.0f; } //Outside bounds
+	if (t < center) { return (t - (center - distance)) / distance; } //Lower slope
+	return (t - center) / distance; //Upper slope
+}
 
 float osc(float t, float amt) { return 1.0f - (sineWave[(int)(t * sineLength) % sineLength] / (float)SHORT_MAX + 1.0f) * 0.5f * amt; }
 

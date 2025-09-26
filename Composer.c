@@ -1,7 +1,9 @@
 #include "headers.h"
 
 const int cKey[] = { 0, 2, 4, 5, 7, 9, 11 };
-const int rhy1[] = { 1, 0, 0, 1, 0, 0, 1, 0 };
+const int rhy1[] = { 1, 1, 1, 1, 0, 0, 1, 1 };
+const int rhy2[] = { 1, 0, 0, 0, 0, 1, 0, 0 };
+const int rhy3[] = { 0, 0, 0, 0, 1, 0, 0, 0 };
 
 int cRhy = 0;
 
@@ -24,11 +26,23 @@ static void synthesize(float l,
 	float falloffTime,
 	float falloffCurve,
 	float sharpness,
+
+	//eqs
+	int eq1Freq,
+	float eq1Amt,
+	int eq2Freq,
+	float eq2Amt,
+	int eq3Freq,
+	float eq3Amt,
+	int eqDist,
+	float eqMin,
 	
 	float vOscRate,
 	float vOscAmt,
 
-	int harDist
+	int harDist,
+	float noiseAmt,
+	float noiseCurve
 
 	) {
 
@@ -42,13 +56,15 @@ static void synthesize(float l,
 	if (fKeyTrack == 1) { rCenter = freq * res; }
 	int rDistance = distance * res;
 	float distInv = 1.0f / rDistance;
-
 	float rFalloffTime = 1.0f / falloffTime;
 
+	static float eqs[OAMacro];
+
 	static float harValues[OAMacro][2];
+	static float noiseValues[noisesAmt];
 
 	
-
+	//Frequency Filters
 	for (int f = 0; f < oscAmount; f++) {
 		//Low pass
 		if (f >= rCenter && f < rCenter + rDistance) {
@@ -64,7 +80,14 @@ static void synthesize(float l,
 
 		harValues[f][0] = ranf();
 		harValues[f][1] = ranf();
+
+		eqs[f] += envEq(f, eq1Freq, eqDist) * eq1Amt;
+		eqs[f] += envEq(f, eq2Freq, eqDist) * eq2Amt;
+		eqs[f] += envEq(f, eq3Freq, eqDist) * eq3Amt;
+		eqs[f] = lerp(eqs[f], 1.0f, eqMin);
 	}
+
+	
 	
 	//Rendering pass
 	for (int i = 0; i < stepLength; i++) {
@@ -82,7 +105,7 @@ static void synthesize(float l,
 			float height = 1.0f - index * oscInv;
 
 			float sharpVal = lerp(filter[index], powf(height, falloff), sharpness);
-			float realFilter = lerp(sharpVal, filter[index], falloff);
+			float realFilter = lerp(sharpVal, filter[index], falloff) * eqs[index];
 
 			//If the harmonic is out of bounds, stop making harmonics
 			if (index >= oscAmount) { break; }
@@ -93,10 +116,14 @@ static void synthesize(float l,
 			setFV(i, index - 12 * res, v * realFilter * osc(time * vOscRate, vOscAmt) * harValues[index][0], 0);
 			setFV(i, index - 12 * res, v * realFilter * osc(time * vOscRate, vOscAmt) * harValues[index][1], 1);
 		}
-		//setFV(i, freq * res, v, 2);
 
-		//while loops to do harmonics  
-		//while cFreq < oscAmount, keep adding harmonics etc
+		//Noise
+		for (int n = 0; n < noisesAmt; n++) {
+
+			float height = powf(1.0f - n / 10.0f, noiseCurve);
+
+			nSetFV(i, n, v * noiseAmt * height, 2);
+		}
 	}
 }
 
@@ -104,10 +131,17 @@ static void synthesize(float l,
 void generate() {
 	
 	bool nTrigger = false;
-	if (cStep % 16 == 0) cRhy++;
-	//if (rhy1[cRhy % 8] && cStep % 16 == 0) { nTrigger = true; }
 
-	if (ranf() < 0.015f) { nTrigger = true; }
+	int cFor = 0;
+	if (ranf() < 0.07f && cStep % 3 == 0) { nTrigger = true; cFor = rani(0, 5); }
+
+
+	if (cStep % 8 == 0) cRhy++;
+	if (rhy1[cRhy % 8] && cStep % 8 == 0) {
+
+	}
+
+
 
 	for (int note = 0; note < rani(1, 6); note++) {
 		
@@ -117,35 +151,46 @@ void generate() {
 		//else...
 
 
-		synthesize(ranfIn(3.0f, 7.0f), //Length
-			ranfIn(0.0f, 0.5f), //Attack percent
+		synthesize(ranfIn(4.0f, 8.0f), //Length
+			ranfIn(0.0f, 0.3f), //Attack percent
 			0.5f, //Decay percent
 			0.8f, //Sustain
 			ranfIn(4.0f, 9.0f), //Release
 			0.9f, //Curve
-			k2m(rani(22, 36) + note * 2, cKey), //Freq
-			0.9f, //Gain
+			k2m(rani(22, 35) + note * 2, cKey), //Freq
+			0.7f, //Gain
 
 			1.0f, //loMin
 			0.0f, //hiMin
-			30, //Filter center
-			1, //Filter key tracking
-			50, //Filter distance
+			40, //Filter center
+			0, //Filter key tracking
+			rani(47, 58), //Filter distance
 			1.0f, //Filter curve
 
 			4.0f, //Filter Falloff time
 			0.9f, //Falloff curve
-			ranfIn(0.0f, 0.5f), //Sharpness
+			ranfIn(0.0f, 0.3f), //Sharpness
+
+			//EQs
+			getFormant(cFor, 0),
+			1.0f,
+			getFormant(cFor, 1),
+			1.0f,
+			getFormant(cFor, 2),
+			0.5f,
+			3 * res, //eqDist
+			ranfIn(0.1f, 0.99f), //eqMin
 
 			rani(1, 5), //vOscRate
 			ranfIn(0.0f, 0.4f), //vOscAmt
 
-			rani(1, 6) //harDist
+			rani(1, 5), //harDist
+			ranfIn(0.0f, 0.05f), //Noise amount
+			0.5f //Noise curve
+
 		);
 		
 
-		//setFV(0, 40 * res, 0.9f, 2);b 
-		//nSetFV(0, 4, 0.5f);
 	}
 	
 
@@ -157,18 +202,28 @@ void setFV(int offStep, int freq, float val, int channel) {
 	if (freq >= oscAmount || freq < 0) { return; }
 	
 	int pos = (cStep + offStep) % bufferLength;
-	char v = (char)(clampf(val, 0.0f, 1.0f) * 255);
+	uint16_t v = clampf(val, 0.0f, 1.0f) * 255;
 
-	if (channel == 2) { buffer[pos][freq][0] += v; buffer[pos][freq][1] += v; }
-	else { buffer[pos][freq][channel] += v; }
+	if (channel == 2) { 
+		buffer[pos][freq][0] = clamp((uint16_t)buffer[pos][freq][0] + v, 0, 255); 
+		buffer[pos][freq][1] = clamp((uint16_t)buffer[pos][freq][1] + v, 0, 255);
+	}
+	else { buffer[pos][freq][channel] = clamp((uint16_t)buffer[pos][freq][channel] + v, 0, 255);
+	}
 }
-void nSetFV(int offStep, int freq, float val) {
+void nSetFV(int offStep, int freq, float val, int channel) {
 	if (freq >= noisesAmt || freq < 0) { return; }
 
-	int npos = (cStep + offStep) % bufferLength;
-	char nv = (char)(clampf(val, 0.0f, 1.0f) * 255);
-	nBuffer[npos][freq][0] += nv;
-	nBuffer[npos][freq][1] += nv;
+	int pos = (cStep + offStep) % bufferLength;
+	uint16_t v = clampf(val, 0.0f, 1.0f) * 255;
+
+	if (channel == 2) {
+		nBuffer[pos][freq][0] = clamp((uint16_t)nBuffer[pos][freq][0] + v, 0, 255);
+		nBuffer[pos][freq][1] = clamp((uint16_t)nBuffer[pos][freq][1] + v, 0, 255);
+	}
+	else {
+		nBuffer[pos][freq][channel] = clamp((uint16_t)nBuffer[pos][freq][channel] + v, 0, 255);
+	}
 }
 
 float* getVols() {
@@ -196,7 +251,6 @@ float* getVols() {
 		buffer[prev][osc][1] = 0;
 	}
 	
-	debugC(gStep);
 
 	//Advance step only after the vols have all been transmitted
 	cStep++; if (cStep >= bufferLength) { cStep -= bufferLength; }

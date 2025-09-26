@@ -2,6 +2,9 @@
 #include <windows.h>
 #include <mmsystem.h>
 
+#define UNICODE
+#define _UNICODE
+
 #include <stdio.h>
 #include <conio.h>
 #include <stdlib.h>
@@ -45,7 +48,7 @@ short sineWave[sineLength];
 const static float nSpeeds[] = { 4.0f, 3.0f, 2.1f, 1.5f, 1.0f, 0.50f, 0.30f, 0.15f, 0.08f, 0.02f };
 const static float byteMult = 1.0f / 256.0f;
 const static float noiseMult = 1.0f / 7.0f;
-const static float activeMult = 1.0f / 3.0f;
+const static float activeMult = 1.0f / 6.0f;
 
 static unsigned char buffer[bufferLength][OAMacro][2];
 static unsigned char nBuffer[bufferLength][noisesAmt][2];
@@ -73,9 +76,12 @@ void writeLoop(HWAVEOUT waveOut);
 //Composer.c
 void generate();
 void setFV(int offStep, int freq, float val, int channel);
-void nSetFV(int offStep, int freq, float val);
+void nSetFV(int offStep, int freq, float val, int channel);
 float* getVols();
 float* getNoises();
+
+//Synthesizer.c
+int getFormant(int vowel, int formant);
 
 //UT.c
 float clampf(float v, float lo, float hi);
@@ -92,15 +98,5 @@ float ranfIn(float min, float max);
 
 float lerp(float a, float b, float t);
 float envADSR(float t, float l, float a, float d, float s, float r, float c);
+float envEq(float t, float center, float distance);
 float osc(float t, float amt);
-
-//UI.c
-void initUI();
-void setCursor(int x, int y);
-void writef(const char* text, float f, int x, int y);
-void write(const char* text, int x, int y);
-void writes(const char* text, const char* add, int x, int y);
-void printVolume(float v);
-void setBox(int x, int y, int width, int height);
-void debugC(int gst);
-void debugR(int wavSize);
