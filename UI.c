@@ -50,7 +50,7 @@ void background() {
 }
 
 void box(int x, int y, int xs, int ys, uint32_t col) {
-
+	//Stupid box drawing thing
 	if (xs < 0 && ys > 0) { 
 		for (int xp = x; xp > x + xs; xp--) {
 			for (int yp = y; yp < y + ys; yp++) {
@@ -93,10 +93,6 @@ void pixel(int x, int y, uint32_t col) {
 	pixels[x + y * winW] = col;
 }
 
-void volumeBar(float volL, float volR) {
-	
-}
-
 void redraw(float* cVols) {
 	background();
 
@@ -111,7 +107,6 @@ void redraw(float* cVols) {
 		volDisp[volDispCurr][osc][1] = ftc(cVols[osc * 2 + 1] * 100);
 	}
 
-	float yOscPos = 300.0f / (float)oscAmount;
 	int spectraHeight = 114 * 2;
 	int hMult = oscAmount / spectraHeight;
 
@@ -128,6 +123,7 @@ void redraw(float* cVols) {
 	}
 	volDispCurr++; volDispCurr = volDispCurr % 64;
 
+	//L+R volume bars
 	box(10, 350, 10, clamp((int)(totalVolL * -100), -349, 0), col1(ftc(clampf(totalVolL * 0.5f, 0.0f, 1.0f))));
 	box(20, 350, 10, clamp((int)(totalVolR * -100), -349, 0), col1(ftc(clampf(totalVolR * 0.5f, 0.0f, 1.0f))));
 }

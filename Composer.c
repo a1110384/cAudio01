@@ -136,13 +136,6 @@ void generate() {
 	if (ranf() < 0.07f && cStep % 3 == 0) { nTrigger = true; cFor = rani(0, 5); }
 
 
-	if (cStep % 8 == 0) cRhy++;
-	if (rhy1[cRhy % 8] && cStep % 8 == 0) {
-
-	}
-
-
-
 	for (int note = 0; note < rani(1, 6); note++) {
 		
 
@@ -197,7 +190,7 @@ void generate() {
 }
 
 
-
+//Converts float values into bytes(chars) for storage in the buffer
 void setFV(int offStep, int freq, float val, int channel) {
 	if (freq >= oscAmount || freq < 0) { return; }
 	
@@ -226,6 +219,7 @@ void nSetFV(int offStep, int freq, float val, int channel) {
 	}
 }
 
+//Sends the current + previous volumes from the buffer to the renderer
 float* getVols() {
 	static float vols[OAMacro * 4]; //Current and previous vols
 

@@ -59,7 +59,7 @@ void startRenderer(HWAVEOUT waveOut) {
 	
 
 
-
+	//Initializing the chunks and waveout device
 	waveOutSetVolume(waveOut, 0xFFFFFFFF);
 	for (int i = 0; i < CHUNK_AMT; ++i) {
 		chunkIndex = i; renderSamples(0.2f);
@@ -74,12 +74,13 @@ void startRenderer(HWAVEOUT waveOut) {
 
 void renderSamples(float inVol) {
 
+	//Calls to Composer.c to generate/receive the current volumes
 	generate();
 	cNoises = getNoises();
 	cVols = getVols();
 	
 	
-
+	//Goes through every sample in the current audio chunk
 	for (int i = 0; i < halfChunk; ++i) {
 		//Clear previous data on this sample
 		chunks[chunkIndex][i * 2] = 0;
@@ -87,15 +88,20 @@ void renderSamples(float inVol) {
 
 		float time = i * timeMult;
 
-		//Sine rendering
+		//Sine rendering (for each frequency)
 		for (int osc = 0; osc < oscAmount; osc++) {
+
+			//Skips it if theres no volume in this frequency
 			if (cVols[osc * 2] == 0.0f && cVols[osc * 2 + 1] == 0.0f && cVols[osc * 2 + oscs2] == 0.0f && cVols[osc * 2 + 1 + oscs2] == 0.0f) { continue; }
 
+			//Calculates how far into the sine array we should be for this frequency
 			int index = (int)((totalOffset + i) * mtfs[osc] + sineStarts[osc]) % sineLength;
 
+			//Lerps between the previous and current volumes so its smooth transition with no clicking
 			float realVolL = lerp(cVols[osc * 2 + oscs2], cVols[osc * 2], time);
 			float realVolR = lerp(cVols[osc * 2 + 1 + oscs2], cVols[osc * 2 + 1], time);
 
+			//Adds this freq's amplitude to the chunk
 			chunks[chunkIndex][i * 2] += sineWave[index] * realVolL * inVol; //LEFT
 			chunks[chunkIndex][i * 2 + 1] += sineWave[index] * realVolR * inVol; //RIGHT
 		}
@@ -126,17 +132,11 @@ void renderSamples(float inVol) {
 	}
 	totalOffset += halfChunk;
 
-	float totalVolumeL = 0.0f;
-	float totalVolumeR = 0.0f;
-
-	for (int osc = 0; osc < oscAmount; osc++) {
-		totalVolumeL += cVols[osc * 2];
-		totalVolumeR += cVols[osc * 2 + 1];
-	}
-
+	//redraws the ui
 	redraw(cVols);
 }
 
+//sends the chunk data to windows waveOut device (headphones)
 void writeLoop(HWAVEOUT waveOut) {
 	waveOutWrite(waveOut, &header[chunkIndex], sizeof(header[chunkIndex]));
 	chunkIndex = (chunkIndex + 1) % CHUNK_AMT;

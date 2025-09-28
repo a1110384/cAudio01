@@ -44,7 +44,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 
 		InvalidateRect(hwnd, NULL, FALSE); UpdateWindow(hwnd);
 
-		//Do framerate sleeping here
+		//Do framerate sleeping here (WIP)
 		Sleep(10);
 	}
 
