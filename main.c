@@ -1,97 +1,51 @@
 #include "headers.h"
-#include "resource.h"
-
-static HWND hwnd;
-static BITMAPINFO frame_bitmap_info;
-static HBITMAP frame_bitmap = 0;
-static HDC frame_device_context = 0;
 
 HWAVEOUT wave_out;
 void CALLBACK waveOutProc(HWAVEOUT, UINT, DWORD_PTR, DWORD_PTR, DWORD_PTR);
-LRESULT CALLBACK winMsgProc(HWND, UINT, WPARAM, LPARAM);
-
-
-static bool quit = false;
-
-int winW = 600;
-int winH = 400;
-uint32_t* pixels;
-
-bool keyDown[256] = { 0 };
-bool keyPressed[256] = { 0 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, int nCmdShow) {
 
-	const wchar_t winClassName[] = L"winmmAudio";
-	static WNDCLASSEX wcx = { 0 };
-	wcx.cbSize = sizeof(wcx);
-	wcx.lpfnWndProc = winMsgProc;
-	wcx.hInstance = hInstance;
-	wcx.lpszClassName = winClassName;
-	wcx.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
-	RegisterClassEx(&wcx);
+	//Window init
+	bmi.bmiHeader.biWidth = winW;
+	bmi.bmiHeader.biHeight = -winH; //Negative sets origin to top left
+	bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
+	bmi.bmiHeader.biPlanes = 1;
+	bmi.bmiHeader.biBitCount = 32;
+	bmi.bmiHeader.biCompression = BI_RGB;
+	hdc = CreateCompatibleDC(0);
 
-	frame_bitmap_info.bmiHeader.biWidth = winW;
-	frame_bitmap_info.bmiHeader.biHeight = winH;
-	frame_bitmap_info.bmiHeader.biSize = sizeof(frame_bitmap_info.bmiHeader);
-	frame_bitmap_info.bmiHeader.biPlanes = 1;
-	frame_bitmap_info.bmiHeader.biBitCount = 32;
-	frame_bitmap_info.bmiHeader.biCompression = BI_RGB;
-	frame_device_context = CreateCompatibleDC(0);
-
-	hwnd = CreateWindowEx(WS_EX_OVERLAPPEDWINDOW, winClassName,
-		winClassName,
-		WS_POPUP | WS_VISIBLE | WS_SYSMENU | WS_CAPTION,
-		640, 300,
-		winW, winH,
-		NULL, NULL, hInstance, NULL);
-	if (hwnd == NULL) { return -1; }
+	setupWindow(hInstance);
 
 	if (frame_bitmap) DeleteObject(frame_bitmap);
-	frame_bitmap = CreateDIBSection(NULL, &frame_bitmap_info, DIB_RGB_COLORS, (void**)&pixels, 0, 0);
-	SelectObject(frame_device_context, frame_bitmap);
-	
+	frame_bitmap = CreateDIBSection(NULL, &bmi, DIB_RGB_COLORS, (void**)&pixels, 0, 0);
+	SelectObject(hdc, frame_bitmap);
+
+
+	//Waveout init
 	WAVEFORMATEX format = setFormat();
 	waveOutOpen(&wave_out, WAVE_MAPPER, &format, (DWORD_PTR)waveOutProc, (DWORD_PTR)NULL, CALLBACK_FUNCTION);
 	startRenderer(wave_out);
 
-	
-	//initUI(); printVolume(mVol);
-
-	//TODO: MAKE AN INPUT ARRAY FOR KEYDOWN AND KEYPRESSED
-	/*
-	int c = 0;
-	while (c != 27) {
-		switch (c = _getch()) {
-		case 75: { //LEFT ARROW
-			mVol = clampf(mVol - 0.05f, 0.0f, 1.0f);
-			printVolume(mVol);
-		} break;
-		case 77: { //RIGHT ARROW
-			mVol = clampf(mVol + 0.05f, 0.0f, 1.0f);
-			printVolume(mVol);
-		} break;
-		case 32: { //SPACEBAR
-			if (playing) { waveOutPause(wave_out); }
-			else { waveOutRestart(wave_out); writeLoop(wave_out); } //Fix
-		} break;
-		}
-	}
-	*/
-
 	while (!quit) {
-		static MSG message = { 0 };
-		while (PeekMessage(&message, NULL, 0, 0, PM_REMOVE)) { DispatchMessage(&message); }
+		memset(keyPressed, 0, 256 * sizeof(keyPressed[0])); //Resets keyPressed
+		static MSG message = { 0 }; while (PeekMessage(&message, NULL, 0, 0, PM_REMOVE)) { DispatchMessage(&message); } //Process all incoming messages
 
-		static unsigned int p = 0;
-
-
-		if (keyPressed['W']) {
-			for (int c = 0; c < winW * winH; c++) { pixels[c] = rand(); }
+		if (keyPressed[VK_LEFT]) {
+			mVol = clampf(mVol - 0.05f, 0.0f, 1.0f);
 		}
+		if (keyPressed[VK_RIGHT]) {
+			mVol = clampf(mVol + 0.05f, 0.0f, 1.0f);
+		}
+		if (keyPressed['W']) { }
+		if (keyPressed['S']) {  }
+		if (keyPressed[VK_ESCAPE]) { quit = true; }
 
-		InvalidateRect(hwnd, NULL, FALSE);
-		UpdateWindow(hwnd);
+		
+
+		InvalidateRect(hwnd, NULL, FALSE); UpdateWindow(hwnd);
+
+		//Do framerate sleeping here
+		Sleep(10);
 	}
 
 	return 0;
@@ -100,7 +54,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 void CALLBACK waveOutProc(HWAVEOUT wave_out_handle, UINT message, DWORD_PTR instance, DWORD_PTR param1, DWORD_PTR param2) {
 	if (message == WOM_DONE) { renderSamples(mVol); writeLoop(wave_out); } //Render and write the buffers
 }
-
+ 
 
 LRESULT CALLBACK winMsgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	static bool winFocus = true;
@@ -109,6 +63,7 @@ LRESULT CALLBACK winMsgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_QUIT:
 	case WM_DESTROY: {
 		quit = true;
+		PostQuitMessage(0);
 	} break;
 
 	case WM_KILLFOCUS: winFocus = false; memset(keyDown, 0, 256 * sizeof(keyDown[0])); break;
@@ -119,23 +74,14 @@ LRESULT CALLBACK winMsgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_KEYDOWN:
 	case WM_KEYUP:
 		if (!winFocus) { break; }
-
-
-		static bool keyIsDown, keyHold;
-		keyIsDown = ((lParam & (1 << 31)) == 0);
+		static bool keyTran, keyHold;
+		keyTran = ((lParam & (1 << 31)) == 0);
 		keyHold = ((lParam & (1 << 30)) != 0);
 
-		if (keyIsDown && !keyDown[(uint8_t)wParam]) {
-			keyPressed[(uint8_t)wParam] = true;
+		if (keyTran != keyHold) {
+			keyPressed[(uint8_t)wParam] = keyTran;
+			keyDown[(uint8_t)wParam] = keyTran;
 		}
-		else {
-			keyPressed[(uint8_t)wParam] = false;
-		}
-
-		if (keyIsDown != keyHold) {
-			keyDown[(uint8_t)wParam] = keyIsDown;
-		}
-
 		break;
 
 
@@ -144,15 +90,13 @@ LRESULT CALLBACK winMsgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 		static HDC device_context;
 		device_context = BeginPaint(hwnd, &paint);
 		BitBlt(device_context,
-			paint.rcPaint.left, paint.rcPaint.top,
-			paint.rcPaint.right - paint.rcPaint.left, paint.rcPaint.bottom - paint.rcPaint.top,
-			frame_device_context,
+			0, 0,
+			winW, winH,
+			hdc,
 			paint.rcPaint.left, paint.rcPaint.top,
 			SRCCOPY);
 		EndPaint(hwnd, &paint);
 	} break;
-
-
 	}
 	return DefWindowProc(hwnd, message, wParam, lParam);
 }

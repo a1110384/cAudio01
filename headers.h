@@ -1,9 +1,12 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <mmsystem.h>
+#include <dwmapi.h>
 
-#define UNICODE
-#define _UNICODE
+#include "resource.h"
+
+//#define UNICODE
+//#define _UNICODE
 
 #include <stdio.h>
 #include <conio.h>
@@ -12,6 +15,27 @@
 #include <math.h>
 #include <stdbool.h>
 #include <time.h>
+
+//Windows vars
+static const wchar_t winClassName[] = L"winmmAudio - a111";
+static HWND hwnd;
+static BITMAPINFO bmi;
+static HBITMAP frame_bitmap = 0;
+static HDC hdc = 0;
+unsigned char* font1;
+
+LRESULT CALLBACK winMsgProc(HWND, UINT, WPARAM, LPARAM);
+
+static bool quit = false;
+
+#define winW 600
+#define winH 400
+uint32_t* pixels;
+static float winWInv, winHInv;
+
+static bool keyDown[256] = { 0 };
+static bool keyPressed[256] = { 0 };
+
 
 #define SHORT_MIN -32768
 #define SHORT_MAX 32767
@@ -100,3 +124,12 @@ float lerp(float a, float b, float t);
 float envADSR(float t, float l, float a, float d, float s, float r, float c);
 float envEq(float t, float center, float distance);
 float osc(float t, float amt);
+
+
+//UI.c
+void setupWindow(HINSTANCE hInstance);
+void background();
+void pixel(int x, int y, uint32_t col);
+void box(int x, int y, int xs, int ys, uint32_t col);
+void volumeBar(float volL, float volR);
+void redraw(float* cVols);

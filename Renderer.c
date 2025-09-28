@@ -78,6 +78,7 @@ void renderSamples(float inVol) {
 	cNoises = getNoises();
 	cVols = getVols();
 	
+	
 
 	for (int i = 0; i < halfChunk; ++i) {
 		//Clear previous data on this sample
@@ -124,6 +125,16 @@ void renderSamples(float inVol) {
 		chunks[chunkIndex][i * 2 + 1] = clamp(chunks[chunkIndex][i * 2 + 1], SHORT_MIN, SHORT_MAX);
 	}
 	totalOffset += halfChunk;
+
+	float totalVolumeL = 0.0f;
+	float totalVolumeR = 0.0f;
+
+	for (int osc = 0; osc < oscAmount; osc++) {
+		totalVolumeL += cVols[osc * 2];
+		totalVolumeR += cVols[osc * 2 + 1];
+	}
+
+	redraw(cVols);
 }
 
 void writeLoop(HWAVEOUT waveOut) {
