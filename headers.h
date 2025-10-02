@@ -22,7 +22,11 @@ static HWND hwnd;
 static BITMAPINFO bmi;
 static HBITMAP frame_bitmap = 0;
 static HDC hdc = 0;
-unsigned char* font1;
+
+#define fontW 64
+#define fontH 38
+#define fontChars 96
+#define pixelScale 2
 
 LRESULT CALLBACK winMsgProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -103,6 +107,7 @@ void setFV(int offStep, int freq, float val, int channel);
 void nSetFV(int offStep, int freq, float val, int channel);
 float* getVols();
 float* getNoises();
+int getStep();
 
 //Synthesizer.c
 int getFormant(int vowel, int formant);
@@ -131,5 +136,5 @@ void setupWindow(HINSTANCE hInstance);
 void background();
 void pixel(int x, int y, uint32_t col);
 void box(int x, int y, int xs, int ys, uint32_t col);
-void volumeBar(float volL, float volR);
-void redraw(float* cVols);
+void redraw(float* cVols, float inVol);
+void print(char* text, int x, int y);

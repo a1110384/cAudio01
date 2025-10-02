@@ -133,7 +133,7 @@ void renderSamples(float inVol) {
 	totalOffset += halfChunk;
 
 	//redraws the ui
-	redraw(cVols);
+	redraw(cVols, inVol);
 }
 
 //sends the chunk data to windows waveOut device (headphones)

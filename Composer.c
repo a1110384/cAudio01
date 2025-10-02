@@ -278,3 +278,5 @@ float* getNoises() {
 	}
 	return noises;
 }
+
+int getStep() { return gStep; }

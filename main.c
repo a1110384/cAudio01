@@ -3,6 +3,8 @@
 HWAVEOUT wave_out;
 void CALLBACK waveOutProc(HWAVEOUT, UINT, DWORD_PTR, DWORD_PTR, DWORD_PTR);
 
+const int frameMs = 1000 / 60;
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, int nCmdShow) {
 
 	//Window init
@@ -42,10 +44,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 
 		
 
+		Sleep(frameMs);
 		InvalidateRect(hwnd, NULL, FALSE); UpdateWindow(hwnd);
 
 		//Do framerate sleeping here (WIP)
-		Sleep(10);
+		
 	}
 
 	return 0;
