@@ -57,6 +57,7 @@ void startRenderer(HWAVEOUT waveOut) {
 		noiseWave[i] = rani(SHORT_MIN, SHORT_MAX);
 	}
 	
+	
 
 
 	//Initializing the chunks and waveout device

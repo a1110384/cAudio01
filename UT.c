@@ -25,6 +25,13 @@ float ranf() { return rand() / (float)RAND_MAX; }
 float ranfIn(float min, float max) { return rand() / (float)RAND_MAX * (max - min) + min; }
 
 float lerp(float a, float b, float t) { return a + t * (b - a); }
+unsigned char lerpByte(unsigned char a, unsigned char b, float t) {
+	if (t < 0.0f) { return a; }
+	if (t > 1.0f) { return b; }
+	return a + t * (b - a);
+}
+
+
 float envADSR(float t, float l, float a, float d, float s, float r, float c) {
 	if (t < a) { return powf(t / a, c); } //Attack
 	if (t > a && t < a + d) { return powf(1.0f - (((t - a) / d) * (1.0f - s)), c); } //Decay

@@ -30,15 +30,7 @@ void setupWindow(HINSTANCE hInstance) {
 	DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &preference, sizeof(preference));
 
 	winWInv = 1.0f / (float)winW; winHInv = 1.0f / (float)winH;
-}
-
-void background() {
-
-	for (int x = 0; x < winW; x++) {
-		for (int y = 0; y < winH; y++) {
-			pixel(x, y, colc(rani(10, 20), rani(10, 30), rani(10, 40)));
-		}
-	}
+	colText = colc(0, 0, 0);
 }
 
 void box(int x, int y, int xs, int ys, uint32_t col) {
@@ -91,16 +83,12 @@ uint32_t colc(unsigned char r, unsigned char g, unsigned char b) {
 uint32_t col1(unsigned char v) {
 	return (uint32_t)((v << 16) + (v << 8) + v);
 }
-uint32_t colf(float r, float g, float b) {
-
-}
 
 void pixel(int x, int y, uint32_t col) {
 	pixels[x + y * winW] = col;
 }
 
 void redraw(float* cVols, float inVol) {
-	//background();
 
 	float totalVolL = 0.0f; float totalVolR = 0.0f;
 	for (int osc = 0; osc < oscAmount; osc++) {
@@ -111,31 +99,30 @@ void redraw(float* cVols, float inVol) {
 		volDisp[volDispCurr][osc][1] = ftc(cVols[osc * 2 + 1] * 100);
 	}
 
-	int spectraHeight = 114 * 2;
+	uint32_t colL = colc(0, 75, 127);
+	uint32_t colR = colc(130, 36, 0);
+	uint32_t colNone = colc(220, 220, 220);
+	uint32_t colBoth = colc(0, 0, 0);
+
 	float hMult = oscAmount / (float)winW;
-
-	uint32_t colL = colc(255, 0, 0);
-	uint32_t colR = colc(0, 0, 255);
-
 	for (int i = 0; i < 64; i++) {
 		for (int h = 0; h < winW; h++) {
 
 			int index = (volDispCurr + i) % 64;
 
-			
-
 			float amtL = ctf(volDisp[index][(int)(h * hMult)][0]);
 			float amtR = ctf(volDisp[index][(int)(h * hMult)][1]);
-			//Figure out a simplified version of lerpC to test
 
-			box(h, 360 - (int)(i * 5.7f), 1, 6, lerpC(col1(0), colR, 0.5f));
+			box(h, 360 - (int)(i * 5.72f), 1, 6, lerpC2D(colL, colR, colNone, colBoth, amtL, amtR));
 		}
 	}
 	volDispCurr++; volDispCurr = volDispCurr % 64;
 
 	//L+R volume bars
-	box(10, 350, 10, clamp((int)(totalVolL * -100), -349, 0), col1(ftc(clampf(totalVolL * 0.5f, 0.0f, 1.0f))));
-	box(20, 350, 10, clamp((int)(totalVolR * -100), -349, 0), col1(ftc(clampf(totalVolR * 0.5f, 0.0f, 1.0f))));
+	box(10, 350, 10, clamp((int)(totalVolL * -100), -349, 0), lerpC(colNone, colL, clampf(totalVolL * 0.5f + 0.2f, 0.0f, 1.0f)));
+	box(20, 350, 10, clamp((int)(totalVolR * -100), -349, 0), lerpC(colNone, colR, clampf(totalVolR * 0.5f + 0.2f, 0.0f, 1.0f)));
+	hLine(10, clamp(350 + (int)(totalVolL * -100), 0, 360), 10, colL);
+	hLine(20, clamp(350 + (int)(totalVolR * -100), 0, 360), 10, colR);
 
 	float bSize = kbSize; const char* bType = kbString;
 	if (kbSize > 1000.0f) { bSize = mbSize; bType = mbString; }
@@ -156,8 +143,9 @@ void redraw(float* cVols, float inVol) {
 	char sVolume[40]; sprintf_s(sVolume, sizeof(sVolume), "Volume: %.2f", inVol);
 	print(sVolume, 4, 20);
 
-	outline(40, 332, 300, 17, col1(255));
-	box(42, 334, (int)(inVol * 296), 14, col1(255));
+	outline(40, 332, 300, 17, colText);
+	box(42, 334, (int)(inVol * 296), 14, colText);
+
 }
 
 void print(char* text, int x, int y) {
@@ -180,7 +168,7 @@ void print(char* text, int x, int y) {
 				if ((font1[cChar * 4 + b] & (0b10000000 >> bit)) == 0) { continue; }
 
 				//Draw the pixel
-				box(((x + xOff) * 5 + (bit % 4)) * pixelScale, (y * 8 + (b * 2 + (bit >= 4))) * pixelScale, pixelScale, pixelScale, col1(255));
+				box(((x + xOff) * 5 + (bit % 4)) * pixelScale, (y * 8 + (b * 2 + (bit >= 4))) * pixelScale, pixelScale, pixelScale, colText);
 			}
 		}
 		xOff++; c = *(text++); //Increment x offset and current char value
@@ -188,16 +176,23 @@ void print(char* text, int x, int y) {
 }
 
 uint32_t lerpC(uint32_t c1, uint32_t c2, float t) {
-	unsigned char c1r = c1 & 0x00ff0000 >> 16;
-	unsigned char c1g = c1 & 0x0000ff00 >> 8;
+	unsigned char c1r = (c1 & 0x00ff0000) >> 16;
+	unsigned char c1g = (c1 & 0x0000ff00) >> 8;
 	unsigned char c1b = c1 & 0x000000ff;
-	unsigned char c2r = c2 & 0x00ff0000 >> 16;
-	unsigned char c2g = c2 & 0x0000ff00 >> 8;
+	unsigned char c2r = (c2 & 0x00ff0000) >> 16;
+	unsigned char c2g = (c2 & 0x0000ff00) >> 8;
 	unsigned char c2b = c2 & 0x000000ff;
 
-	float r = lerp(ctf(c1r), ctf(c2r), t);
-	float g = lerp(ctf(c1g), ctf(c2g), t);
-	float b = lerp(ctf(c1b), ctf(c2b), t);
+	unsigned char r = lerpByte(c1r, c2r, t);
+	unsigned char g = lerpByte(c1g, c2g, t);
+	unsigned char b = lerpByte(c1b, c2b, t);
 
-	return colc(ftc(r), ftc(g), ftc(b));
+	return colc(r, g, b);
+}
+
+uint32_t lerpC2D(uint32_t c1, uint32_t c2, uint32_t none, uint32_t both, float t1, float t2) {
+
+	uint32_t l1 = lerpC(none, c1, t1);
+	uint32_t l2 = lerpC(c2, both, t1);
+	return lerpC(l1, l2, t2);
 }

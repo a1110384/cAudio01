@@ -135,6 +135,9 @@ void generate() {
 	int cFor = 0;
 	if (ranf() < 0.07f && cStep % 3 == 0) { nTrigger = true; cFor = rani(0, 5); }
 
+	for (int t = 0; t < time(NULL) % 256; t++) {
+		ranf();
+	}
 
 	for (int note = 0; note < rani(1, 6); note++) {
 		
@@ -150,7 +153,7 @@ void generate() {
 			0.8f, //Sustain
 			ranfIn(4.0f, 9.0f), //Release
 			0.9f, //Curve
-			k2m(rani(22, 35) + note * 2, cKey), //Freq
+			k2m(rani(19, 35) + note * 2, cKey), //Freq
 			0.7f, //Gain
 
 			1.0f, //loMin

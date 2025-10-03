@@ -27,6 +27,7 @@ static HDC hdc = 0;
 #define fontH 38
 #define fontChars 96
 #define pixelScale 2
+uint32_t colText;
 
 LRESULT CALLBACK winMsgProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -47,8 +48,8 @@ static bool keyPressed[256] = { 0 };
 #define SAMPLE_RATE 44100
 #define BPM 140
 #define SPM (SAMPLE_RATE * 60)
-#define CHUNK_SIZE (SPM / BPM / 8)
-#define CHUNK_AMT 2
+#define CHUNK_SIZE 2048
+#define CHUNK_AMT 4
 const static int halfChunk = CHUNK_SIZE / 2;
 const static int CPS = (SAMPLE_RATE / CHUNK_SIZE);
 float cpsInv;
@@ -126,6 +127,7 @@ float ranf();
 float ranfIn(float min, float max);
 
 float lerp(float a, float b, float t);
+unsigned char lerpByte(unsigned char a, unsigned char b, float t);
 float envADSR(float t, float l, float a, float d, float s, float r, float c);
 float envEq(float t, float center, float distance);
 float osc(float t, float amt);
@@ -133,8 +135,10 @@ float osc(float t, float amt);
 
 //UI.c
 void setupWindow(HINSTANCE hInstance);
-void background();
 void pixel(int x, int y, uint32_t col);
 void box(int x, int y, int xs, int ys, uint32_t col);
 void redraw(float* cVols, float inVol);
 void print(char* text, int x, int y);
+uint32_t lerpC(uint32_t c1, uint32_t c2, float t);
+uint32_t lerpC2D(uint32_t c1, uint32_t c2, uint32_t none, uint32_t both, float t1, float t2);
+uint32_t colc(unsigned char r, unsigned char g, unsigned char b);
