@@ -99,8 +99,8 @@ void redraw(float* cVols, float inVol) {
 		volDisp[volDispCurr][osc][1] = ftc(cVols[osc * 2 + 1] * 100);
 	}
 
-	uint32_t colL = colc(0, 75, 127);
-	uint32_t colR = colc(130, 36, 0);
+	uint32_t colL = colc(0, 135, 255);
+	uint32_t colR = colc(255, 50, 0);
 	uint32_t colNone = colc(220, 220, 220);
 	uint32_t colBoth = colc(0, 0, 0);
 

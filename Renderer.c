@@ -10,7 +10,7 @@ short chunkIndex = 0;
 
 long totalOffset = 0;
 
-#define blendAmount 0.9f
+#define blendAmount 1.0f
 float timeMult;
 
 double mtfs[midiTotal * res];
@@ -52,13 +52,9 @@ void startRenderer(HWAVEOUT waveOut) {
 		sineStarts[osc] = rand() % 44100;
 	}
 	
-	
 	for (int i = 0; i < noiseLength; i++) {
 		noiseWave[i] = rani(SHORT_MIN, SHORT_MAX);
 	}
-	
-	
-
 
 	//Initializing the chunks and waveout device
 	waveOutSetVolume(waveOut, 0xFFFFFFFF);
@@ -79,10 +75,11 @@ void renderSamples(float inVol) {
 	generate();
 	cNoises = getNoises();
 	cVols = getVols();
-	
-	
+
 	//Goes through every sample in the current audio chunk
-	for (int i = 0; i < halfChunk; ++i) {
+	int i;
+	#pragma omp parallel for num_threads(activeThreads)
+	for (i = 0; i < halfChunk; ++i) {
 		//Clear previous data on this sample
 		chunks[chunkIndex][i * 2] = 0;
 		chunks[chunkIndex][i * 2 + 1] = 0;

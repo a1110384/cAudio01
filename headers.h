@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <mmsystem.h>
 #include <dwmapi.h>
+#include <omp.h>
 
 #include "resource.h"
 
@@ -41,6 +42,8 @@ static float winWInv, winHInv;
 static bool keyDown[256] = { 0 };
 static bool keyPressed[256] = { 0 };
 
+#define activeThreads 1
+
 
 #define SHORT_MIN -32768
 #define SHORT_MAX 32767
@@ -54,7 +57,7 @@ const static int halfChunk = CHUNK_SIZE / 2;
 const static int CPS = (SAMPLE_RATE / CHUNK_SIZE);
 float cpsInv;
 
-#define res 8
+#define res 16
 #define resF (float)res
 #define midiTotal 114
 const static short oscAmount = res * midiTotal;
@@ -106,12 +109,21 @@ void writeLoop(HWAVEOUT waveOut);
 void generate();
 void setFV(int offStep, int freq, float val, int channel);
 void nSetFV(int offStep, int freq, float val, int channel);
+void setFFV(int offStep, float freq, float val, int channel);
 float* getVols();
 float* getNoises();
 int getStep();
 
 //Synthesizer.c
 int getFormant(int vowel, int formant);
+struct adsr {
+	float l;
+	float ap;
+	float dp;
+	float s;
+	float r;
+	float c;
+};
 
 //UT.c
 float clampf(float v, float lo, float hi);
